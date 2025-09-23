@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>発注データダウンロード デモ</title>
+<style>
+  :root{
+    --bg:#f4f7fb;
+    --card:#ffffff;
+    --accent:#2b7cff;
+    --muted:#6b7280;
+    --danger:#e02424;
+    font-family: Inter, system-ui, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+  }
+  body{
+    margin:0;
+    background:linear-gradient(180deg,#eef4ff 0%,var(--bg) 100%);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .container{
+    width:100%;
+    max-width:920px;
+    background:var(--card);
+    border-radius:12px;
+    box-shadow:0 8px 30px rgba(37,48,63,0.08);
+    overflow:hidden;
+    display:flex;
+    gap:0;
+  }
+  .left{
+    width:360px;
+    padding:28px;
+    border-right:1px solid #eef2f7;
+    background:linear-gradient(180deg,rgba(43,124,255,0.06),transparent);
+  }
+  .brand{
+    display:flex;
+    gap:12px;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .logo{
+    width:44px;height:44px;border-radius:10px;background:var(--accent);
+    display:flex;align-items:center;justify-content:center;color:white;font-weight:700;
+    box-shadow:0 6px 18px rgba(43,124,255,0.12);
+  }
+  h1{font-size:18px;margin:0 0 6px}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+  form{margin-top:18px;display:grid;gap:12px}
+  label{font-size:13px;color:#374151}
+  input[type="text"], input[type="password"]{
+    width:100%;padding:10px 12px;border-radius:8px;border:1px solid #e6eefc;background:white;
+    box-sizing:border-box;font-size:14px;
+  }
+  button{
+    padding:10px 14px;border-radius:8px;border:0;background:var(--accent);color:white;font-weight:600;
+    cursor:pointer;font-size:14px;
+  }
+  button.ghost{background:transparent;color:var(--accent);border:1px solid rgba(43,124,255,0.14)}
+  .muted{color:var(--muted);font-size:13px}
+  .right{flex:1;padding:28px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .field{display:flex;flex-direction:column}
+  input[type="date"], select, input[type="number"]{
+    padding:10px 12px;border-radius:8px;border:1px solid #e6eefc;background:white;font-size:14px;
+  }
+  .actions{margin-top:18px;display:flex;gap:12px;align-items:center}
+  .small{font-size:13px;color:var(--muted)}
+  .info-row{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:12px}
+  .toast{background:#fff8e6;border:1px solid #ffe6a8;padding:10px;border-radius:8px;font-size:13px;color:#7a5b00}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+  .user-box{display:flex;gap:10px;align-items:center}
+  .chip{padding:6px 10px;border-radius:999px;border:1px solid #eef2f7;font-size:13px;color:#334155}
+  footer{margin-top:18px;color:var(--muted);font-size:13px}
+  @media (max-width:800px){
+    .container{flex-direction:column}
+    .left{width:100%;border-right:0;border-bottom:1px solid #eef2f7}
+  }
+</style>
+</head>
+<body>
+  <div class="container" role="application" aria-labelledby="app-title">
+    <!-- 左：ログイン -->
+    <div class="left" id="loginPanel" aria-hidden="false">
+      <div class="brand">
+        <div class="logo">OD</div>
+        <div>
+          <h1 id="app-title">発注CSVダウンロード（デモ）</h1>
+          <p class="lead">ログインして発注CSVをダウンロードします（デモ）。</p>
+        </div>
+      </div>
+
+      <form id="loginForm" aria-label="ログインフォーム">
+        <div>
+          <label for="loginId">ログインID</label>
+          <input id="loginId" type="text" autocomplete="username" placeholder="例: demo_user" required />
+        </div>
+        <div>
+          <label for="loginPass">パスワード</label>
+          <input id="loginPass" type="password" autocomplete="current-password" placeholder="パスワード" required />
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+          <button id="loginBtn" type="button">ログイン</button>
+          <button id="fillDemo" class="ghost" type="button">デモ資格情報を入れる</button>
+        </div>
+        <div class="info-row" style="margin-top:12px;">
+          <div class="muted">※この画面はデモです。入力はローカル処理のみ。</div>
+        </div>
+      </form>
+
+      <footer>
+        <div style="margin-top:18px;">使い方：IDとパスワードを入れてログイン → 発注日を選択してCSVダウンロード</div>
+      </footer>
+    </div>
+
+    <!-- 右：メイン -->
+    <div class="right" id="mainPanel" aria-hidden="true" style="display:none;">
+      <div class="topbar">
+        <div>
+          <h2 style="margin:0 0 6px 0">発注CSVダウンロード</h2>
+          <div class="small">デモ用のダミーデータがダウンロードされます</div>
+        </div>
+        <div class="user-box">
+          <div class="chip" id="loggedUser">---</div>
+          <button id="logoutBtn" class="ghost" type="button">ログアウト</button>
+        </div>
+      </div>
+
+      <section aria-labelledby="filter-title">
+        <h3 id="filter-title" style="margin:0 0 10px 0;font-size:15px">検索条件</h3>
+        <div class="grid">
+          <div class="field">
+            <label for="fromDate">発注日（開始）</label>
+            <input id="fromDate" type="date" />
+          </div>
+          <div class="field">
+            <label for="toDate">発注日（終了）</label>
+            <input id="toDate" type="date" />
+          </div>
+          <div class="field">
+            <label for="orderType">注文種別</label>
+            <select id="orderType">
+              <option value="">すべて</option>
+              <option value="standard">通常</option>
+              <option value="rush">緊急</option>
+              <option value="backorder">取り寄せ</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="rowCount">生成件数</label>
+            <input id="rowCount" type="number" min="1" max="1000" value="25"/>
+            <div class="small" style="margin-top:6px;">CSVに含める行数を指定</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="downloadBtn" type="button">CSVダウンロード</button>
+          <button id="previewBtn" class="ghost" type="button">プレビュー表示</button>
+          <div style="flex:1"></div>
+          <div id="previewCount" class="muted">プレビュー：0行</div>
+        </div>
+
+        <div class="info-row" style="margin-top:12px;">
+          <div class="toast" id="notice">※ データはダミーです。実際の個人情報は含みません。</div>
+        </div>
+
+        <div id="previewArea" style="margin-top:14px;display:none;">
+          <h4 style="margin:0 0 8px 0">CSV プレビュー（先頭10行）</h4>
+          <div style="overflow:auto;border:1px solid #eef2f7;border-radius:8px;padding:10px;background:#fbfdff;">
+            <table id="previewTable" style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead id="previewHead"></thead>
+              <tbody id="previewBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+function $(id){return document.getElementById(id)}
+function fmtDate(d){
+  const y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), day=('0'+d.getDate()).slice(-2);
+  return y+'-'+m+'-'+day;
+}
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+
+const loginBtn = $('loginBtn'), fillDemo = $('fillDemo'), logoutBtn = $('logoutBtn');
+const loginPanel = $('loginPanel'), mainPanel = $('mainPanel');
+const loginId = $('loginId'), loginPass = $('loginPass'), loggedUser = $('loggedUser');
+
+fillDemo.addEventListener('click', ()=>{
+  loginId.value = 'demo_user';
+  loginPass.value = 'password';
+});
+
+loginBtn.addEventListener('click', ()=>{
+  const id = loginId.value.trim(), pass = loginPass.value;
+  if(!id || !pass){
+    alert('ログインIDとパスワードを入力してください。');
+    return;
+  }
+  doLogin(id);
+});
+
+logoutBtn.addEventListener('click', ()=>{ doLogout(); });
+
+function doLogin(id){
+  loginPanel.style.display='none';
+  loginPanel.setAttribute('aria-hidden','true');
+  mainPanel.style.display='block';
+  mainPanel.setAttribute('aria-hidden','false');
+  loggedUser.textContent = id;
+  const today = new Date();
+  const lastWeek = new Date(); lastWeek.setDate(today.getDate()-7);
+  $('fromDate').value = fmtDate(lastWeek);
+  $('toDate').value = fmtDate(today);
+  $('previewCount').textContent = 'プレビュー：0行';
+}
+function doLogout(){
+  loginPanel.style.display='';
+  loginPanel.setAttribute('aria-hidden','false');
+  mainPanel.style.display='none';
+  mainPanel.setAttribute('aria-hidden','true');
+  loginPass.value = '';
+  hidePreview();
+}
+
+function generateDummyOrders(from, to, count, orderType){
+  const rows=[];
+  const headers=['OrderID','OrderDate','Customer','OrderType','Item','Quantity','UnitPrice','Total'];
+  const customers = ['山田商店','佐藤株式会社','田中商事','GreenTech','オフィスSATO','株式会社ミナミ'];
+  const items = ['ノートPC','マウス','キーボード','モニター','ケーブル','プリンタトナー','スマホケース'];
+  const start = from.getTime(), end = to.getTime();
+  for(let i=0;i<count;i++){
+    const t = start + Math.round(Math.random() * Math.max(0, end - start));
+    const d = new Date(t);
+    const dateStr = fmtDate(d);
+    const id = 'ORD-' + (100000 + i);
+    const cust = customers[randInt(0,customers.length-1)];
+    const it = items[randInt(0,items.length-1)];
+    const qty = randInt(1,50);
+    const base = {'ノートPC':120000,'マウス':1500,'キーボード':3200,'モニター':28000,'ケーブル':800,'プリンタトナー':9500,'スマホケース':1200};
+    const price = base[it] || randInt(500,50000);
+    const total = qty * price;
+    const type = orderType || (['standard','rush','backorder'][randInt(0,2)]);
+    rows.push({OrderID:id,OrderDate:dateStr,Customer:cust,OrderType:type,Item:it,Quantity:qty,UnitPrice:price,Total:total});
+  }
+  return {headers,rows};
+}
+
+function objectArrayToCSV(headers, rows){
+  const esc = v => {
+    if (v===null || v===undefined) return '';
+    const s = String(v);
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  };
+  const lines = [];
+  lines.push(headers.join(','));
+  for(const r of rows){
+    lines.push(headers.map(h => esc(r[h])).join(','));
+  }
+  return lines.join('\r\n');
+}
+
+const downloadBtn = $('downloadBtn'), previewBtn = $('previewBtn');
+const previewArea = $('previewArea'), previewHead = $('previewHead'), previewBody = $('previewBody'), previewCount = $('previewCount');
+
+previewBtn.addEventListener('click', ()=>{
+  const params = readParams();
+  if(!params) return;
+  const {headers,rows} = generateDummyOrders(params.from, params.to, Math.min(params.count, 1000), params.orderType);
+  showPreview(headers, rows);
+});
+
+downloadBtn.addEventListener('click', ()=>{
+  const params = readParams();
+  if(!params) return;
+  const {headers,rows} = generateDummyOrders(params.from, params.to, params.count, params.orderType);
+  const csv = objectArrayToCSV(headers, rows);
+  const filename = `orders_${fmtDate(params.from)}_to_${fmtDate(params.to)}_${rows.length}rows.csv`;
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+});
+
+function readParams(){
+  const fd = $('fromDate').value, td = $('toDate').value;
+  if(!fd || !td){ alert('発注日の開始/終了を選択してください。'); return null; }
+  const from = new Date(fd + 'T00:00:00'), to = new Date(td + 'T23:59:59');
+  if(from > to){ alert('開始日は終了日より前にしてください。'); return null; }
+  let count = parseInt($('rowCount').value,10) || 0;
+  if(count <= 0){ alert('生成件数は1以上を指定してください。'); return null; }
+  const orderType = $('orderType').value;
+  return {from,to,count,orderType};
+}
+
+function showPreview(headers, rows){
+  previewArea.style.display='block';
+  previewHead.innerHTML = '';
+  const trh = document.createElement('tr');
+  for(const h of headers){
+    const th = document.createElement('th');
+    th.textContent = h; th.style.textAlign = 'left'; th.style.padding = '6px 8px'; th.style.borderBottom = '1px solid #eef2f7';
+    trh.appendChild(th);
+  }
+  previewHead.appendChild(trh);
+  previewBody.innerHTML = '';
+  const show = Math.min(rows.length, 10);
+  for(let i=0;i<show;i++){
+    const r = rows[i]; const tr = document.createElement('tr');
+    for(const h of headers){
+      const td = document.createElement('td');
+      td.textContent = r[h]; td.style.padding = '6px 8px'; td.style.borderBottom = '1px dashed #f1f5f9';
+      tr.appendChild(td);
+    }
+    previewBody.appendChild(tr);
+  }
+  previewCount.textContent = `プレビュー：${rows.length}行（先頭${show}行表示）`;
+}
+function hidePreview(){
+  previewArea.style.display='none'; previewHead.innerHTML = ''; previewBody.innerHTML = ''; previewCount.textContent = 'プレビュー：0行';
+}
+
+loginId.focus();
+</script>
+</body>
+</html>

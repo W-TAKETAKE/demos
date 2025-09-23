@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>発注データダウンロードシステム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            width: 450px;
+            margin: 50px auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 1.5rem 2rem;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.85rem;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .download-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .download-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .download-note {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #1565c0;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 140px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2980b9, #21618c);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #229954, #1e8449);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        .main-screen {
+            width: 1000px;
+            margin: 30px auto;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            height: fit-content;
+            border: 1px solid #dee2e6;
+        }
+
+        .sidebar h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .main-area {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            border: 1px solid #dee2e6;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .filters .form-group {
+            margin-bottom: 0;
+        }
+
+        .date-range {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .summary {
+            background: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            border-left: 4px solid #3498db;
+        }
+
+        .summary h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f3f4;
+            color: #555;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-item span:first-child {
+            font-weight: 500;
+        }
+
+        .summary-item span:last-child {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        @media (max-width: 1050px) {
+            .main-screen {
+                width: 95%;
+                max-width: 1000px;
+            }
+            
+            .main-content {
+                grid-template-columns: 300px 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ログイン画面 -->
+    <div id="loginScreen" class="container screen active">
+        <div class="header">
+            <h1>発注データダウンロード</h1>
+            <p>システムにログインしてください</p>
+        </div>
+        <div class="content">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginId">ログインID</label>
+                    <input type="text" id="loginId" name="loginId" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">パスワード</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">ログイン</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- メイン画面 -->
+    <div id="mainScreen" class="container main-screen screen">
+        <div class="header" style="position: relative;">
+            <h1>発注データダウンロードシステム</h1>
+            <p>発注データをCSV形式でダウンロード</p>
+            <button class="logout-btn" onclick="logout()">ログアウト</button>
+        </div>
+        <div class="main-content">
+            <div class="sidebar">
+                <h3>検索条件</h3>
+                <div class="filters">
+                    <div class="form-group">
+                        <label>発注日期間</label>
+                        <div class="date-range">
+                            <input type="date" id="startDate" placeholder="開始日">
+                            <input type="date" id="endDate" placeholder="終了日">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="supplier">仕入先</label>
+                        <select id="supplier">
+                            <option value="">すべて</option>
+                            <option value="supplier1">株式会社サプライヤー1</option>
+                            <option value="supplier2">有限会社サプライヤー2</option>
+                            <option value="supplier3">サプライヤー商事</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="status">ステータス</label>
+                        <select id="status">
+                            <option value="">すべて</option>
+                            <option value="pending">発注済</option>
+                            <option value="confirmed">確定</option>
+                            <option value="delivered">納品済</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-area">
+                <div class="summary">
+                    <h3>ダウンロード対象データ</h3>
+                    <div class="summary-item">
+                        <span>対象期間</span>
+                        <span id="periodSummary">未選択</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>仕入先フィルター</span>
+                        <span id="supplierFilter">すべて</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>ステータスフィルター</span>
+                        <span id="statusFilter">すべて</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>推定レコード数</span>
+                        <span id="recordCount">0件</span>
+                    </div>
+                    <div class="summary-item">
+                        <span>推定ファイルサイズ</span>
+                        <span id="fileSize">0KB</span>
+                    </div>
+                </div>
+
+                <div class="download-section">
+                    <h3>CSVダウンロード</h3>
+                    <div class="download-note">
+                        <strong>注意事項：</strong><br>
+                        • ダウンロードファイルは UTF-8(BOM付き) で出力されます<br>
+                        • 大量データの場合、ダウンロードに時間がかかる場合があります<br>
+                        • ファイル名形式：order_data_開始日_終了日.csv
+                    </div>
+                    <button type="button" class="btn btn-success" onclick="downloadCSV()">
+                        CSVダウンロード実行
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初期化
+        document.addEventListener('DOMContentLoaded', function() {
+            // デフォルトの日付を設定（過去30日間）
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+            
+            document.getElementById('startDate').value = formatDate(thirtyDaysAgo);
+            document.getElementById('endDate').value = formatDate(today);
+
+            // イベントリスナーを設定
+            document.getElementById('startDate').addEventListener('change', updateSummary);
+            document.getElementById('endDate').addEventListener('change', updateSummary);
+            document.getElementById('supplier').addEventListener('change', updateSummary);
+            document.getElementById('status').addEventListener('change', updateSummary);
+
+            // 初回サマリー更新
+            updateSummary();
+        });
+
+        // ログイン処理
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const loginId = document.getElementById('loginId').value;
+            const password = document.getElementById('password').value;
+            
+            // デモなので簡単な認証チェック
+            if (loginId && password) {
+                document.getElementById('loginScreen').classList.remove('active');
+                document.getElementById('mainScreen').classList.add('active');
+            } else {
+                alert('ログインIDとパスワードを入力してください。');
+            }
+        });
+
+        // ログアウト処理
+        function logout() {
+            document.getElementById('mainScreen').classList.remove('active');
+            document.getElementById('loginScreen').classList.add('active');
+            
+            // フォームをクリア
+            document.getElementById('loginForm').reset();
+        }
+
+        // 日付フォーマット
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        // サマリー更新
+        function updateSummary() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const supplier = document.getElementById('supplier');
+            const status = document.getElementById('status');
+
+            // 期間表示
+            let periodText = '未選択';
+            if (startDate && endDate) {
+                periodText = `${startDate} ～ ${endDate}`;
+            } else if (startDate) {
+                periodText = `${startDate} ～`;
+            } else if (endDate) {
+                periodText = `～ ${endDate}`;
+            }
+            document.getElementById('periodSummary').textContent = periodText;
+
+            // フィルター表示更新
+            document.getElementById('supplierFilter').textContent = 
+                supplier.value ? supplier.options[supplier.selectedIndex].text : 'すべて';
+            document.getElementById('statusFilter').textContent = 
+                status.value ? status.options[status.selectedIndex].text : 'すべて';
+
+            // レコード数計算（デモ用の適当な計算）
+            let recordCount = 0;
+            if (startDate && endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                recordCount = Math.max(0, daysDiff * 15); // 1日あたり15件程度
+
+                // フィルターによる調整
+                if (supplier.value) recordCount = Math.floor(recordCount * 0.3);
+                if (status.value) recordCount = Math.floor(recordCount * 0.6);
+            }
+
+            document.getElementById('recordCount').textContent = `${recordCount.toLocaleString()}件`;
+            document.getElementById('fileSize').textContent = `${Math.ceil(recordCount * 0.2)}KB`;
+        }
+
+        // CSVダウンロード
+        function downloadCSV() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            if (!startDate || !endDate) {
+                alert('発注日の開始日と終了日を選択してください。');
+                return;
+            }
+
+            // ダミーデータ生成
+            const csvData = generateDummyCSV();
+            
+            // CSVファイルとしてダウンロード
+            const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `order_data_${startDate}_${endDate}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // ダミーCSVデータ生成
+        function generateDummyCSV() {
+            const headers = [
+                '発注日',
+                '発注番号',
+                '仕入先コード',
+                '仕入先名',
+                '商品コード',
+                '商品名',
+                '数量',
+                '単価',
+                '金額',
+                'ステータス'
+            ];
+
+            const suppliers = [
+                { code: 'SUP001', name: '株式会社サプライヤー1' },
+                { code: 'SUP002', name: '有限会社サプライヤー2' },
+                { code: 'SUP003', name: 'サプライヤー商事' }
+            ];
+
+            const products = [
+                { code: 'PRD001', name: '商品A', price: 1500 },
+                { code: 'PRD002', name: '商品B', price: 2800 },
+                { code: 'PRD003', name: '商品C', price: 950 },
+                { code: 'PRD004', name: '商品D', price: 3200 },
+                { code: 'PRD005', name: '商品E', price: 1800 }
+            ];
+
+            const statuses = ['発注済', '確定', '納品済'];
+
+            let csvContent = '\ufeff' + headers.join(',') + '\n'; // BOM付きUTF-8
+
+            const startDate = new Date(document.getElementById('startDate').value);
+            const endDate = new Date(document.getElementById('endDate').value);
+            const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+
+            // ダミーデータ生成
+            for (let i = 0; i < Math.min(daysDiff * 10, 100); i++) {
+                const orderDate = new Date(startDate.getTime() + Math.random() * (endDate - startDate));
+                const supplier = suppliers[Math.floor(Math.random() * suppliers.length)];
+                const product = products[Math.floor(Math.random() * products.length)];
+                const quantity = Math.floor(Math.random() * 50) + 1;
+                const amount = product.price * quantity;
+                const status = statuses[Math.floor(Math.random() * statuses.length)];
+                
+                const row = [
+                    formatDate(orderDate),
+                    `ORD${String(1000 + i).padStart(6, '0')}`,
+                    supplier.code,
+                    supplier.name,
+                    product.code,
+                    product.name,
+                    quantity,
+                    product.price.toLocaleString(),
+                    amount.toLocaleString(),
+                    status
+                ];
+
+                csvContent += row.join(',') + '\n';
+            }
+
+            return csvContent;
+        }
+    </script>
+</body>
+</html>
