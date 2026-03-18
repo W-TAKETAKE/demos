@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ドラッグ＆ドロップ ファイル情報表示</title>
+    <title>ファイルアップローダー</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -15,9 +15,10 @@
             color: #333;
         }
 
+        /* ドロップ領域のデザイン */
         #drop-zone {
             width: 500px;
-            height: 200px;
+            padding: 40px;
             border: 3px dashed #cbd5e0;
             border-radius: 20px;
             display: flex;
@@ -26,14 +27,36 @@
             justify-content: center;
             background-color: #fff;
             transition: all 0.3s ease;
-            cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
         }
 
         #drop-zone.dragover {
             border-color: #3182ce;
             background-color: #ebf8ff;
             transform: translateY(-2px);
+        }
+
+        /* ファイル選択ボタン */
+        #select-button {
+            background-color: #3182ce;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+
+        #select-button:hover {
+            background-color: #2b6cb0;
+        }
+
+        /* 隠しinput */
+        #file-input {
+            display: none;
         }
 
         #result-area {
@@ -56,6 +79,12 @@
             align-items: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             border-left: 5px solid #3182ce;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .file-info {
@@ -78,11 +107,14 @@
 </head>
 <body>
 
-    <h2>ファイルをドロップ</h2>
+    <h2>ファイルをアップロード</h2>
 
     <div id="drop-zone">
         <p style="font-size: 1.2em; margin-bottom: 5px;">📄 ここにファイルをドロップ</p>
-        <p style="font-size: 0.8em; color: #a0aec0;">（複数ファイルもOK）</p>
+        <p style="color: #a0aec0; margin-bottom: 10px;">または</p>
+        
+        <button id="select-button">ファイルを選択</button>
+        <input type="file" id="file-input" multiple>
     </div>
 
     <div id="result-area">
@@ -92,9 +124,11 @@
 
     <script>
         const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const selectButton = document.getElementById('select-button');
         const fileList = document.getElementById('file-list');
 
-        // バイトを適切な単位（KB, MB等）に変換する関数
+        // バイト単位を変換する関数
         function formatBytes(bytes, decimals = 2) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
@@ -104,7 +138,35 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
         }
 
-        // デフォルト動作の無効化
+        // 共通のファイルリスト追加処理
+        function addFilesToList(files) {
+            Array.from(files).forEach(file => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${formatBytes(file.size)}</span>
+                    </div>
+                `;
+                fileList.appendChild(li);
+            });
+        }
+
+        // --- イベント設定 ---
+
+        // 1. ボタンが押されたら隠しinputをクリック
+        selectButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // 2. ファイルダイアログで選択された時の処理
+        fileInput.addEventListener('change', () => {
+            addFilesToList(fileInput.files);
+            // 連続で同じファイルを選択しても反応するようにリセット
+            fileInput.value = '';
+        });
+
+        // 3. ドラッグ＆ドロップ関連
         ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
             dropZone.addEventListener(eventName, e => {
                 e.preventDefault();
@@ -112,7 +174,6 @@
             }, false);
         });
 
-        // ドラッグ中のスタイル
         ['dragenter', 'dragover'].forEach(eventName => {
             dropZone.addEventListener(eventName, () => {
                 dropZone.classList.add('dragover');
@@ -125,23 +186,9 @@
             }, false);
         });
 
-        // ドロップ時のメイン処理
         dropZone.addEventListener('drop', e => {
             const files = e.dataTransfer.files;
-            
-            Array.from(files).forEach(file => {
-                const li = document.createElement('li');
-                
-                // HTML構造を作成
-                li.innerHTML = `
-                    <div class="file-info">
-                        <span class="file-name">${file.name}</span>
-                        <span class="file-size">${formatBytes(file.size)}</span>
-                    </div>
-                `;
-                
-                fileList.appendChild(li);
-            });
+            addFilesToList(files);
         }, false);
     </script>
 
