@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ドラッグ＆ドロップ ファイル情報表示</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        #drop-zone {
+            width: 500px;
+            height: 200px;
+            border: 3px dashed #cbd5e0;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        #drop-zone.dragover {
+            border-color: #3182ce;
+            background-color: #ebf8ff;
+            transform: translateY(-2px);
+        }
+
+        #result-area {
+            margin-top: 40px;
+            width: 500px;
+        }
+
+        #file-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        #file-list li {
+            background: #fff;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 5px solid #3182ce;
+        }
+
+        .file-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            font-weight: bold;
+            font-size: 0.95em;
+            color: #2d3748;
+        }
+
+        .file-size {
+            font-size: 0.85em;
+            color: #718096;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>ファイルをドロップ</h2>
+
+    <div id="drop-zone">
+        <p style="font-size: 1.2em; margin-bottom: 5px;">📄 ここにファイルをドロップ</p>
+        <p style="font-size: 0.8em; color: #a0aec0;">（複数ファイルもOK）</p>
+    </div>
+
+    <div id="result-area">
+        <h3>読み込まれたファイル</h3>
+        <ul id="file-list"></ul>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileList = document.getElementById('file-list');
+
+        // バイトを適切な単位（KB, MB等）に変換する関数
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // デフォルト動作の無効化
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        // ドラッグ中のスタイル
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        // ドロップ時のメイン処理
+        dropZone.addEventListener('drop', e => {
+            const files = e.dataTransfer.files;
+            
+            Array.from(files).forEach(file => {
+                const li = document.createElement('li');
+                
+                // HTML構造を作成
+                li.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${formatBytes(file.size)}</span>
+                    </div>
+                `;
+                
+                fileList.appendChild(li);
+            });
+        }, false);
+    </script>
+
+</body>
+</html>
