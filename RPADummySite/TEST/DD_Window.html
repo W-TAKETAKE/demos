@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ファイルアップローダー & ウィンドウ操作</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        /* ドロップ領域のデザイン */
+        #drop-zone {
+            width: 500px;
+            padding: 40px;
+            border: 3px dashed #cbd5e0;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        #drop-zone.dragover {
+            border-color: #3182ce;
+            background-color: #ebf8ff;
+            transform: translateY(-2px);
+        }
+
+        /* 共通ボタンデザイン */
+        .btn {
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+
+        #select-button { background-color: #3182ce; }
+        #select-button:hover { background-color: #2b6cb0; }
+
+        #open-sub-window { 
+            background-color: #48bb78; 
+            margin-top: 30px;
+            font-weight: bold;
+        }
+        #open-sub-window:hover { background-color: #38a169; }
+
+        /* 隠しinput */
+        #file-input { display: none; }
+
+        #result-area {
+            margin-top: 40px;
+            width: 500px;
+        }
+
+        #file-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        #file-list li {
+            background: #fff;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 5px solid #3182ce;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            font-weight: bold;
+            font-size: 0.95em;
+            color: #2d3748;
+        }
+
+        .file-size {
+            font-size: 0.85em;
+            color: #718096;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>ファイルをアップロード</h2>
+
+    <div id="drop-zone">
+        <p style="font-size: 1.2em; margin-bottom: 5px;">📄 ここにファイルをドロップ</p>
+        <p style="color: #a0aec0; margin-bottom: 10px;">または</p>
+        
+        <button id="select-button" class="btn">ファイルを選択</button>
+        <input type="file" id="file-input" multiple>
+    </div>
+
+    <button id="open-sub-window" class="btn">別ウィンドウを開く</button>
+
+    <div id="result-area">
+        <h3>読み込まれたファイル</h3>
+        <ul id="file-list"></ul>
+    </div>
+
+    <br><br>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const selectButton = document.getElementById('select-button');
+        const fileList = document.getElementById('file-list');
+        const openWindowBtn = document.getElementById('open-sub-window');
+
+        // --- ファイルアップロード関連の既存機能 ---
+
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        function addFilesToList(files) {
+            Array.from(files).forEach(file => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="file-info">
+                        <span class="file-name">${file.name}</span>
+                        <span class="file-size">${formatBytes(file.size)}</span>
+                    </div>
+                `;
+                fileList.appendChild(li);
+            });
+        }
+
+        selectButton.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', () => {
+            addFilesToList(fileInput.files);
+            fileInput.value = '';
+        });
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        dropZone.addEventListener('drop', e => {
+            addFilesToList(e.dataTransfer.files);
+        }, false);
+
+        // --- 追加機能：別ウィンドウの制御 ---
+
+        openWindowBtn.addEventListener('click', () => {
+            // 新しいウィンドウを開く (URLは空、名前、サイズなどの設定)
+            const subWin = window.open("", "SubWindow", "width=450,height=300,top=100,left=100");
+
+            // 別ウィンドウのHTML内容を書き込む
+            subWin.document.write(`
+                <!DOCTYPE html>
+                <html lang="ja">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>サブウィンドウ です</title>
+                    <style>
+                        body { 
+                            font-family: sans-serif; 
+                            background-color: #edf2f7; 
+                            display: flex; 
+                            flex-direction: column; 
+                            align-items: center; 
+                            justify-content: center; 
+                            height: 100vh; 
+                            margin: 0; 
+                        }
+                        .container {
+                            background: white;
+                            padding: 30px;
+                            border-radius: 15px;
+                            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                            text-align: center;
+                        }
+                        h3 { color: #2d3748; margin-top: 0; }
+                        button {
+                            background-color: #e53e3e;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 6px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            transition: background 0.2s;
+                        }
+                        button:hover { background-color: #c53030; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h3>別ウィンドウが開きました</h3>
+                        <p>下のボタンを押すとこの画面を閉じます。</p>
+                        <br>
+                        <button onclick="window.close()">ウィンドウを閉じる</button>
+                    </div>
+                </body>
+                </html>
+            `);
+        });
+    </script>
+</body>
+</html>
