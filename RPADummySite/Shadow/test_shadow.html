@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Shadow DOM Test</title>
+</head>
+<body>
+    <h1>Shadow DOM Test Page</h1>
+    <div id="normal-div">Normal DOM Element</div>
+    <div id="shadow-host"></div>
+
+    <script>
+        const host = document.getElementById('shadow-host');
+        const shadow = host.attachShadow({mode: 'open'});
+        shadow.innerHTML = `
+            <div style="border: 1px solid red; padding: 10px;">
+                <h2>Inside Shadow DOM</h2>
+                <button id="shadow-btn">Shadow Click Me</button>
+                <input type="text" id="shadow-input" placeholder="Shadow Input">
+                <div class="nested-host"></div>
+            </div>
+        `;
+
+        // Nested Shadow DOM
+        const nestedHost = shadow.querySelector('.nested-host');
+        const nestedShadow = nestedHost.attachShadow({mode: 'open'});
+        nestedShadow.innerHTML = `
+            <div style="border: 1px solid blue; padding: 10px; margin-top: 10px;">
+                <h3>Inside Nested Shadow DOM</h3>
+                <span id="nested-text">Nested Shadow Text Content</span>
+            </div>
+        `;
+    </script>
+</body>
+</html>
