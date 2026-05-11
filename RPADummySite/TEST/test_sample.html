@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>VBAChrome 機能テストページ</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .test-section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        h2 { margin-top: 0; color: #333; }
+        
+        /* スタイル取得テスト用 */
+        #style-target {
+            color: #e74c3c;
+            font-size: 24px;
+            font-weight: bold;
+            background-color: #f9f9f9;
+            padding: 10px;
+            display: inline-block;
+        }
+
+        /* ホバーテスト用 */
+        #hover-target {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #hover-target:hover {
+            background-color: #2ecc71;
+        }
+        #hover-status { font-weight: bold; margin-left: 10px; }
+
+        /* フレームテスト用 */
+        iframe { width: 100%; height: 100px; border: 1px dashed #999; }
+    </style>
+</head>
+<body>
+    <h1>VBAChrome 機能テストページ</h1>
+
+    <!-- 1. CSSスタイル取得テスト -->
+    <div class="test-section">
+        <h2>1. GetComputedStyle テスト</h2>
+        <div id="style-target">この要素のスタイルを取得してください</div>
+        <p>テスト項目: color, font-size, font-weight</p>
+    </div>
+
+    <!-- 2. ホバー操作テスト -->
+    <div class="test-section">
+        <h2>2. Hover テスト</h2>
+        <button id="hover-target" onmouseover="document.getElementById('hover-status').innerText='ホバー中！'" onmouseout="document.getElementById('hover-status').innerText='---'">
+            マウスを重ねてください
+        </button>
+        <span id="hover-status">---</span>
+    </div>
+
+    <!-- 3. JSダイアログテスト -->
+    <div class="test-section">
+        <h2>3. Aleart (Dialog) テスト</h2>
+        <button onclick="alert('これはAlertです。OKを押してください。')">Alert表示</button>
+        <button onclick="if(confirm('これはConfirmです。OKかキャンセルを選んでください。')){ alert('OKが押されました'); }else{ alert('キャンセルが押されました'); }">Confirm表示</button>
+        <button onclick="const val = prompt('名前を入力してください', 'テスト太郎'); alert('入力内容: ' + val);">Prompt表示</button>
+    </div>
+
+    <!-- 4. フレーム探索テスト -->
+    <div class="test-section">
+        <h2>4. EnterFrame (IFrame) テスト</h2>
+        <p>以下のフレーム内に要素があります。</p>
+        <iframe srcdoc="<html><body style='background:#eee;'><button id='frame-button' onclick='alert(&quot;フレーム内のボタンが押されました&quot;)'>フレーム内のボタン</button></body></html>"></iframe>
+        <p>XPath: <code>//button[@id='frame-button']</code></p>
+    </div>
+
+    <script>
+        console.log("Test page loaded.");
+    </script>
+</body>
+</html>
